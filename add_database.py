@@ -27,7 +27,7 @@ class Roles(str,Enum):
     candidate = "candidate"
     interviewer = "interviewer"
 
-class Schedules()    
+#class Schedules()    
 
 class User(BaseModel):
     id: Optional[UUID]=uuid4()
@@ -36,7 +36,7 @@ class User(BaseModel):
     middle_name: Optional[str]
     email: str
     roles: Roles
-    schedule: List[Schedules]
+#    schedule: List[Schedules]
 
 @app.route('/user/', methods=['GET', 'POST']) 
 #Methods to retrieve, post and add new information in the database

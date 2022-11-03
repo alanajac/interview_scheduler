@@ -13,10 +13,17 @@ class Roles(str,Enum):
 #class Schedules()
 class Config:
     arbitrary_types_allowed = True
-    
+    orm_mode = True
+
+def schedule_transform(self,dates_and_times):
+    for slots in dates_and_times:
+        datetime.strptime(slots,'%d/%m/%Y %H:%M')
+        self.dates_and_times.append(slots)
+    return self.dates_and_times
+#Attempt of class to use          
 class Schedule():
 
-    def __init__(self,id,roles):
+    def __init__(self,id=None,roles=None):
         self.id = id
         self.roles = roles    
 
@@ -34,7 +41,7 @@ class User(BaseModel):
     middle_name: Optional[str]
     email: str
     roles: Roles
-    schedule: Schedule
+    schedule: List[str]
 
 
 
@@ -44,7 +51,8 @@ user1 = User(
         last_name = "Alves",
         email = "alan.ajac@gmail.com",
         roles = Roles.interviewer,
-        schedule =  [User.id,User.roles,['04/11/2022 9:00','04/11/2022 10:00','04/11/2022 11:00','04/11/2022 15:00','05/11/2022 12:00','05/11/2022 9:00']])
+        schedule =  ['04/11/2022 9:00','04/11/2022 10:00','04/11/2022 11:00','04/11/2022 15:00','05/11/2022 12:00','05/11/2022 9:00']
+        )
 print(user1.schedule)
 
 
