@@ -1,10 +1,12 @@
-from typing import Optional,List
-from pydantic import BaseModel
-from uuid import UUID, uuid4
-from enum import Enum
-from datetime import datetime,timedelta
-from agenda_sch import TimeSchedule
 
+from uuid import UUID, uuid4
+from datetime import datetime,timedelta
+#from agenda_sch import TimeSchedule
+from add_database import Base
+from sqlalchemy import Column, String,Integer,ForeignKey,Table
+from sqlalchemy.orm import relationship
+from add_database import engine
+#from fastapi_utils.guid_type import GUID
 #class RoleChecker:
 #    def __init__(self, Roles: List):
 #        self.Roles = Roles
@@ -15,32 +17,33 @@ from agenda_sch import TimeSchedule
 #            raise HTTPException(status_code=403, detail="Operation not permitted")
 
 #allow_create_resource = RoleChecker(["interviewer", "candidate"])
+class DBUser(Base):
+    __tablename__ = 'Users'
+    id = Column(Integer,primary_key=True,index=True)
+    first_name = Column(String(50))
+    last_name = Column(String(50))
+    middle_name = Column(String(50))
+    email = Column(String(50))
+    roles = Column(String)
+    
+#    schedules = relationship("DBSchedule", back_populates="user")
 
-class Roles(str,Enum):
-    candidate = "candidate"
-    interviewer = "interviewer"
+class DBSchedule(Base):
+    __tablename__ = 'Schedules'
+    id =  Column(String,primary_key=True,index=True )
+    user_id = Column(Integer,ForeignKey("Users.id"))
+    roles = Column(String(50))
+    slots = Column(String(50))
+
+#    user = relationship("DBUser", back_populates="schedules")#->Not necessary to this 
     
 
-class User(BaseModel):
-    id: Optional[UUID]= uuid4()
-    first_name: str
-    last_name: str
-    middle_name: Optional[str]
-    email: str
-    roles: Roles
-#    availability: List[TimeSchedule]
 
 
-class UserUpdateRequest(BaseModel):
-    id: Optional[UUID]=uuid4()
-    first_name: Optional[str]
-    last_name: Optional[str]
-    middle_name: Optional[str]
-    roles: Optional[str]
-    availability: Optional[List[TimeSchedule]]
+#class Schedules()    
 
 
-#Fake database to store users.
+
 
 
 

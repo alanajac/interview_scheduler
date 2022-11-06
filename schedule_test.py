@@ -34,6 +34,15 @@ class Schedule():
         
         return self.dates_and_times
 
+
+class Schedule2():
+    def __init__(self,dates_and_times=[]):
+        self.dates_and_times=dates_and_times
+        for slots in dates_and_times:
+            self.dates_and_times = datetime.strptime(slots,'%d/%m/%Y %H:%M')
+            self.dates_and_times.append(slots) 
+
+
 class User(BaseModel):
     id: Optional[UUID]= uuid4()
     first_name: str
@@ -43,6 +52,17 @@ class User(BaseModel):
     roles: Roles
     schedule: List[str]
 
+    class Config:
+            orm_mode = True
+
+class Schedules(BaseModel):
+    parent_id: Optional[UUID]=uuid4()
+    id: Optional[UUID]=uuid4()
+    roles: str
+    schedules: Schedule2
+
+    class Config:
+            orm_mode = True
 
 
 user1 = User(
