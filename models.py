@@ -1,9 +1,11 @@
-
 from uuid import UUID, uuid4
 from datetime import datetime,timedelta
+from pydantic import BaseModel,Field
+from typing import Union,List,Optional
 #from agenda_sch import TimeSchedule
 from add_database import Base
-from sqlalchemy import Column, String,Integer,ForeignKey,Table
+from enum import Enum
+from sqlalchemy import Column, String,Integer,ForeignKey
 from sqlalchemy.orm import relationship
 from add_database import engine
 #from fastapi_utils.guid_type import GUID
@@ -16,10 +18,12 @@ from add_database import engine
 #            logger.debug(f"User with role {user.roles} not in {self.Roles}")
 #            raise HTTPException(status_code=403, detail="Operation not permitted")
 
+
+
 #allow_create_resource = RoleChecker(["interviewer", "candidate"])
 class DBUser(Base):
     __tablename__ = 'Users'
-    id = Column(Integer,primary_key=True,index=True)
+    id = Column(String,primary_key=True,index=True)
     first_name = Column(String(50))
     last_name = Column(String(50))
     middle_name = Column(String(50))

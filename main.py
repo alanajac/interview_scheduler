@@ -8,24 +8,22 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 #other files
 import models
-from add_database import engine,SessionLocal
+import add_database
+import methods
 #from agenda_sch import TimeSchedule
 
 
 app = FastAPI()
 
-models.Base.metadata.create_all(bind=engine)
+add_database.Base.metadata.create_all(bind=add_database.engine)
 
 def get_db():
-    db = SessionLocal()
+    db = add_database.SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
-class Roles(str,Enum):
-    candidate = "candidate"
-    interviewer = "interviewer"
 
 class Schedules_lst():
     def __init__(self,id=None,roles=None,dates_and_times=[]):
@@ -42,84 +40,32 @@ class Schedules_lst():
     #    return self.dates_and_times
 
         
-
-class User(BaseModel):
-    #id: Optional[UUID]=uuid4()
-    id: int
-    first_name: str
-    last_name: str
-    middle_name: Optional[str]
-    email: str
-    roles: Roles
-    
-
-    class Config:
-            orm_mode = True    
-
-class Schedules(BaseModel):
-    #id: int
-    slots: List[str]
-    
-      
-    class Config:
-            orm_mode = True 
-
-class Slots(BaseModel):
-    id: int
-    user_id: int
-    roles: str
-    slots: List[str]
-
-    class Config:
-            orm_mode = True 
-
-#Retrieve one user
-def get_user(db: Session, user_id: int):
-    return db.query(models.DBUser).where(models.DBUser.id == user_id).first()
-
 #retrieve one user -call
 @app.get('/user/{user_id}')
-def get_user_view(user_id: int, db: Session = Depends(get_db)):
-    return get_user(db, user_id)
-
-#Retrieves all users
-def get_users(db: Session):
-    return db.query(models.DBUser).all()
+def get_user_view(user_id: str, db: Session = Depends(get_db)):
+    return methods.get_user(db, user_id)
 
 #Retrieve all users -call
-@app.get('/user/', response_model=List[User])
+@app.get('/user/', response_model=List[methods.User])
 def get_user_view(db: Session = Depends(get_db)):
-    return get_users(db)
+    return methods.get_users(db)
 
-#Create a new user
-def create_user(db: Session, user: User):
-    db_user = models.DBUser(**user.dict())
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-
-    return db_user
+    
 #Create a new user-call
-@app.post('/user/', response_model = User)
-def create_user_view(user: User, db: Session = Depends(get_db)):
-    db_user = create_user(db, user)
+@app.post('/user/', response_model = methods.User)
+def create_user_view(user: methods.User, db: Session = Depends(get_db)):
+    db_user = methods.create_user(db, user)
     return db_user
 
-def delete_user(db: Session, user_id: int):
-    user =  get_user(db,user_id)
-    if user:
-        db.delete(user)
-        db.commit()
-        return
 
 #delete an user-call
 @app.delete('/user/{user_id}')
-async def delete_user_view(user_id: int,db: Session = Depends(get_db)):
-    return delete_user(db,user_id)
+async def delete_user_view(user_id: str,db: Session = Depends(get_db)):
+    return methods.delete_user(db,user_id)
 
 #update an user-function and call
 @app.put("/user/{user_id}")
-async def update_user_view(user_id: int,user: User, db: Session = Depends(get_db)):
+async def update_user_view(user_id: str,user: methods.User, db: Session = Depends(get_db)):
    user_model = db.query(models.DBUser).filter(models.DBUser.id == user_id).first() 
    if user_model is None:
     raise HTTPException(
@@ -135,39 +81,26 @@ async def update_user_view(user_id: int,user: User, db: Session = Depends(get_db
    db.commit()
    return user      
 
-#get a schedule-function
-def get_slots(user_id: int,db: Session):
-    return db.query(models.DBSchedule).where(models.DBSchedule.id == user_id).first()
-#get a schedule-function-call
+#get all the time-slots of an user schedule-call
+@app.get('/user/{user_id}/slots/')
+async def get_schedules_view(user_id: str,db:Session=Depends(get_db)):
+     return methods.get_slots(user_id,db)
 
-@app.get('/slots/{user_id}/')
-async def get_schedules_view(user_id: int,db:Session=Depends(get_db)):
-     return get_slots(user_id,db)
-
-
-#post a schedule-function
-def post_schedule(user_id: int,schedules:Schedules,db:Session):
-    user=get_user(db,user_id)
-    for slot in schedules.slots:
-        slot_model = models.DBSchedule()
-        slot_model.id = str(uuid4())    
-        slot_model.user_id = user.id# db.query(models.DBUser.id).where(models.DBUser.id==user_id).first()
-        slot_model.roles = user.roles#db.query(models.DBUser.roles).where(models.DBUser.id==user_id).first()
-        slot_model.slots = slot
-        db.add(slot_model)
-    db.commit()
-    db.refresh(slot_model)
-
-#post a schedule-call
-@app.post("/user/{user_id}/slots/",response_model=Slots)
-async def post_schedules_view(user_id: int,schedules:Schedules, db: Session=Depends(get_db)):
-    user_slots = post_schedule(user_id,schedules,db)
+#post all the time-slots of an user -call
+@app.post("/user/{user_id}/slots/",response_model=List[str])
+async def post_schedules_view(user_id: str,schedules:methods.Slots, db: Session=Depends(get_db)):
+    user_slots = methods.post_schedule(user_id,schedules,db)
     return user_slots
+
+#get the schedules of a candidate and his/her interviewers
+@app.get('user/{user_id}/schedules/',response_model=List[methods.Schedules])
+async def get_candidate_schedules_view(user_id: str,db:Session=Depends(get_db)):
+    return methods.get_schedules_user(db,user_id)
 
 #root
 @app.get('/')
-async def root(alan: int = 0):
-    return {'message': 'Killing me softly!','alan': alan }
+async def root(alan: int = 1):
+    return {'message': 'Interviews Scheduler','alan': "Alan Jorge Alves do Carmo: v. {alan}" }
 '''
 #create a Login:
 #https://www.youtube.com/watch?v=xZnOoO3ImSY&ab_channel=IanRufus
