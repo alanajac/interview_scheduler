@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session,aliased
+from sqlalchemy import and_
 import models
 from typing import Union,List,Optional
 from uuid import UUID, uuid4
@@ -131,6 +132,14 @@ from Schedules c
 inner join Users u on c.user_id = u.id and u.id = "1582721e-625c-4f70-97cc-9eb17a2810ff"
 inner join Schedules i on c.slots = i.slots and i.roles = "interviewer" 
 inner join Users u2 on u2.id = i.user_id;
+#columns should be:
+c.user_id as "candidate id" - DBSchedule_in.user_id ok
+u.first_name "candidate name" -  DBUser_in.first_name ok
+u.last_name " candidate surname" -  DBUser_in.last_name ok
+i.user_id as "interviewer id" - DBSchedule_out.user_id
+u2.first_name as "interviewer name" DBUser_out.first_name
+c.slots as "time slots" DBSchedule_in.slots
+DB_
 '''
 def get_candidate_schedules(user_input: str,db:Session):
     DBSchedule_in = aliased(models.DBSchedule)
@@ -140,9 +149,29 @@ def get_candidate_schedules(user_input: str,db:Session):
     #slots_user = get_slots(user_input,db)
     #user = get_user(db,user_input)
     #slots_interviewer=get_slots_by_role("interviewer",db)
-    return db.query(DBSchedule_in).join(DBUser_in).filter(DBSchedule_in.user_id==DBUser_in.id).filter(DBUser_in.id==user_input).with_entities(DBSchedule_in.user_id,DBUser_in.first_name,DBUser_in.last_name).join(DBSchedule_out).filter(DBSchedule_in.slots == DBSchedule_out.slots).filter(DBSchedule_out.roles == "interviewer").join(DBUser_out).filter(DBUser_out.id==DBUser_in.id)
-
-    #db.query(models.DBSchedule,models.DBUser,models.DBSchedule)
-
+    #get list of all the Schedules
+       #3rd attempt
+    return db.query(DBSchedule_in.user_id.label("candidate id"),DBUser_in.first_name.label("candidate name"),DBUser_in.last_name.label("candidate surname"),DBSchedule_out.user_id.label("interviewer id"),DBUser_out.first_name.label("interviewer name"),DBSchedule_in.slots.label("time slots")).select_from(DBSchedule_in) \
+    .join(DBUser_in,and_(DBSchedule_in.user_id == DBUser_in.id,DBUser_in.id==user_input))\
+    .join(DBSchedule_out,and_(DBSchedule_in.slots == DBSchedule_out.slots,DBSchedule_out.roles == "interviewer"))\
+    .join(DBUser_out,DBUser_out.id==DBSchedule_out.user_id).order_by(DBSchedule_in.slots).all()
+    
+    #1st attempt
+    #return db.query(DBSchedule_in).join(DBUser_in).filter(DBSchedule_in.user_id==DBUser_in.id).filter(DBUser_in.id==user_input).join(DBSchedule_out).filter(DBSchedule_out.slots == DBSchedule_in.slots).filter(DBSchedule_out.roles == "interviewer").join(DBUser_out).filter(DBUser_out.id==DBSchedule_out.user_id).with_entities(DBSchedule_in.user_id,DBUser_in.first_name,DBUser_in.last_name,DBSchedule_out.user_id,DBUser_out.first_name,DBSchedule_in.slots).all()
+    
+    #2nd attempt
+    '''
+    return db.query(DBSchedule_in.user_id,DBUser_in.first_name,DBUser_in.last_name,DBSchedule_out.user_id,DBUser_out.first_name,DBSchedule_in.slots).select_from(DBSchedule_in) \
+    .join(DBUser_in).filter(DBSchedule_in.user_id == DBUser_in.id).filter(DBUser_in.id==user_input)\
+    .join(DBSchedule_out).filter(DBSchedule_in.slots == DBSchedule_out.slots).filter(DBSchedule_out.roles == "interviewer")\
+    .join(DBUser_out).filter(DBUser_out.id==DBSchedule_out.user_id).all()
+    '''
+ 
+    #get from several interviewers:
+    '''
+    for interviewer in list_interviewers:
+        db.query(DBSchedule_in).join(DBUser_in).filter(DBSchedule_in.user_id==DBUser_in.id).filter(DBUser_in.id==user_input).join(DBSchedule_out).filter(DBSchedule_out.slots == DBSchedule_in.slots).filter(DBSchedule_out.user_id == interviewer).join(DBUser_out).filter(DBUser_out.id==DBUser_in.id).with_entities(DBSchedule_in.user_id,DBUser_in.first_name,DBUser_in.last_name,DBSchedule_out.user_id,DBUser_out.first_name,DBSchedule_in.slots).all()
+    #db.query(models.DBSchedule,models.DBUser,models.DBSchedule).all()
+    '''
     #db.query(models.DBSchedule).where(models.DBSchedule.user_id==user_id)  
 
