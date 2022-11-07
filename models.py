@@ -33,9 +33,9 @@ class DBUser(Base):
 #    schedules = relationship("DBSchedule", back_populates="user")
 
 class DBSchedule(Base):
-    __tablename__ = 'Schedules'
+    __tablename__ = 'Slots'
     id =  Column(String,primary_key=True,index=True )
-    user_id = Column(Integer,ForeignKey("Users.id"))
+    user_id = Column(String,ForeignKey("Users.id"))
     roles = Column(String(50))
     slots = Column(String(50))
 

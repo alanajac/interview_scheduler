@@ -1,9 +1,4 @@
-#Slots candidate 1
-{
-  "slots": [
-    "10/11/22 9:00","10/11/22 11:00","10/11/22 12:00","11/11/22 9:00","11/11/22 10:00","12/11/22 14:00","12/11/22 15:00","13/11/22 9:00"
-  ]
-}
+
 #Slots interviewer 1
 {
   "slots": [
@@ -17,6 +12,18 @@
   ]
 }
 #Slots interviewer 3
+{
+  "slots": [
+    "10/11/22 9:00","10/11/22 10:00","11/11/22 10:00","11/11/22 11:00","11/11/22 15:00","12/11/22 10:00","12/11/22 9:00","13/11/22 10:00","14/11/22 11:00"
+  ]
+}
+#Slots candidate 1
+{
+  "slots": [
+	    "10/11/22 9:00","10/11/22 11:00","10/11/22 12:00","11/11/22 9:00","11/11/22 10:00","12/11/22 14:00","12/11/22 15:00","13/11/22 9:00"
+	    ]
+}
+#Slots candidate 2 
 {
   "slots": [
     "10/11/22 16:00","10/11/22 17:00","11/11/22 10:00","11/11/22 11:00","11/11/22 12:00","12/11/22 10:00","12/11/22 9:00","13/11/22 10:00","13/11/22 11:00"
@@ -39,17 +46,24 @@
   "roles": "interviewer"
 }
 {
+  "first_name": "Richard",
+  "last_name": "Feynman",
+  "middle_name": "",
+  "email": "feynman@physics.com",
+  "roles": "interviewer"
+}
+{
+  "first_name": "Morihei",
+  "last_name": "Ueshiba",
+  "middle_name": "",
+  "email": "ueshiba@aikikai.com",
+  "roles": "interviewer"
+}
+{
   "first_name": "Alan",
   "last_name": "Carmo",
   "middle_name": "",
   "email": "alan@email.com",
-  "roles": "candidate"
-}
-{
-  "first_name": "Janka",
-  "last_name": "Megiesi",
-  "middle_name": "",
-  "email": "jankita@email.com",
   "roles": "candidate"
 }
 {
@@ -59,5 +73,22 @@
   "email": "isaac@foundation.com",
   "roles": "candidate"
 }
+{
+  "first_name": "Janka",
+  "last_name": "Megiesi",
+  "middle_name": "",
+  "email": "jankita@email.com",
+  "roles": "candidate"
+}
+
+
+
+select c.user_id as "candidate id", u.first_name "candidate name", u.last_name " candidate surname",i.user_id as "interviewer id",u2.first_name as "interviewer name", c.slots as "time slots"
+from Schedules c 
+inner join Users u on c.user_id = u.id and u.id = "1582721e-625c-4f70-97cc-9eb17a2810ff"
+inner join Schedules i on c.slots = i.slots and i.roles = "interviewer" 
+inner join Users u2 on u2.id = i.user_id;
+
+
 
 

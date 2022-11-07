@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session,aliased
 import models
 from typing import Union,List,Optional
 from uuid import UUID, uuid4
@@ -29,23 +29,26 @@ class Slots(BaseModel):
     slots: List[str]
     
     class Config:
-        orm_mode = True    
-      
-class Slotss(BaseModel):
-    id: int
-    user_id: int
+        orm_mode = True
+
+
+class Slot_Table(BaseModel):
+    id: str
+    user_id: str
     roles: str
-    slots: List[str]
+    slot: str
 
     class Config:
-        orm_mode = True 
-
+        orm_mode = True
+              
+      
 class Schedules(BaseModel):
     id: str
     first_name: str
     last_name: str
-    interviewer: str
     slot: str
+    interviewer: str
+    
     
     class Config:
         orm_mode = True
@@ -87,6 +90,25 @@ def delete_user(db: Session, user_id: str):
 def get_slots(user_id: str,db: Session):
     return db.query(models.DBSchedule).where(models.DBSchedule.user_id == user_id).all()
 
+#CHECK THESE OUT
+#get all the time slots of all users
+def get_all_slots(db:Session):
+    return db.query(models.DBSchedule).all()
+'''def get_all_slots(db:Session):
+    all_slots = Slot_Table()
+    for instance in models.DBSchedule:
+        all_slots.id = models.DBSchedule.id 
+        all_slots.user_id = models.DBSchedule.user_id
+        all_slots.roles = models.DBSchedule.roles
+        all_slots.slot = models.DBSchedule.slots
+#    all_slots = db.query(models.DBSchedule).all()
+    return all_slots
+'''
+
+#get all the time slots for a given role
+def get_slots_by_role(role_name: str,db:Session):
+    return db.query(models.DBSchedule).where(models.DBSchedule.roles== role_name).all()
+
 #post a schedule-function
 def post_schedule(user_id: str,schedules:Slots,db:Session):
     user=get_user(db,user_id)
@@ -101,6 +123,26 @@ def post_schedule(user_id: str,schedules:Slots,db:Session):
     
     return schedules.slots
 
-def get_candidate_schedules_view(user_id: str,schedules: Schedules,db:Session):
-    pass    
+'''
+#Query to get the schedules between candidate and interviewers    
+
+select c.user_id as "candidate id", u.first_name "candidate name", u.last_name " candidate surname",i.user_id as "interviewer id",u2.first_name as "interviewer name", c.slots as "time slots"
+from Schedules c 
+inner join Users u on c.user_id = u.id and u.id = "1582721e-625c-4f70-97cc-9eb17a2810ff"
+inner join Schedules i on c.slots = i.slots and i.roles = "interviewer" 
+inner join Users u2 on u2.id = i.user_id;
+'''
+def get_candidate_schedules(user_input: str,db:Session):
+    DBSchedule_in = aliased(models.DBSchedule)
+    DBSchedule_out = aliased(models.DBSchedule)
+    DBUser_in = aliased(models.DBUser)
+    DBUser_out = aliased(models.DBUser)
+    #slots_user = get_slots(user_input,db)
+    #user = get_user(db,user_input)
+    #slots_interviewer=get_slots_by_role("interviewer",db)
+    return db.query(DBSchedule_in).join(DBUser_in).filter(DBSchedule_in.user_id==DBUser_in.id).filter(DBUser_in.id==user_input).with_entities(DBSchedule_in.user_id,DBUser_in.first_name,DBUser_in.last_name).join(DBSchedule_out).filter(DBSchedule_in.slots == DBSchedule_out.slots).filter(DBSchedule_out.roles == "interviewer").join(DBUser_out).filter(DBUser_out.id==DBUser_in.id)
+
+    #db.query(models.DBSchedule,models.DBUser,models.DBSchedule)
+
+    #db.query(models.DBSchedule).where(models.DBSchedule.user_id==user_id)  
 

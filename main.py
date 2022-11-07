@@ -24,7 +24,7 @@ def get_db():
     finally:
         db.close()
 
-
+'''
 class Schedules_lst():
     def __init__(self,id=None,roles=None,dates_and_times=[]):
         self.id = id
@@ -32,6 +32,7 @@ class Schedules_lst():
         for slots in dates_and_times:
             dates_and_times = datetime.strptime(slots,'%d/%m/%Y %H:%M')
         self.dates_and_times=dates_and_times.append(slots)
+'''        
     #def schedules(self,dates_and_times):
     #    for slots in dates_and_times:
     #        datetime.strptime(slots,'%d/%m/%Y %H:%M')
@@ -41,30 +42,30 @@ class Schedules_lst():
 
         
 #retrieve one user -call
-@app.get('/user/{user_id}')
+@app.get('/users/{user_id}')
 def get_user_view(user_id: str, db: Session = Depends(get_db)):
     return methods.get_user(db, user_id)
 
 #Retrieve all users -call
-@app.get('/user/', response_model=List[methods.User])
+@app.get('/users/', response_model=List[methods.User])
 def get_user_view(db: Session = Depends(get_db)):
     return methods.get_users(db)
 
     
 #Create a new user-call
-@app.post('/user/', response_model = methods.User)
+@app.post('/users/', response_model = methods.User)
 def create_user_view(user: methods.User, db: Session = Depends(get_db)):
     db_user = methods.create_user(db, user)
     return db_user
 
 
 #delete an user-call
-@app.delete('/user/{user_id}')
+@app.delete('/users/{user_id}')
 async def delete_user_view(user_id: str,db: Session = Depends(get_db)):
     return methods.delete_user(db,user_id)
 
 #update an user-function and call
-@app.put("/user/{user_id}")
+@app.put("/users/{user_id}")
 async def update_user_view(user_id: str,user: methods.User, db: Session = Depends(get_db)):
    user_model = db.query(models.DBUser).filter(models.DBUser.id == user_id).first() 
    if user_model is None:
@@ -82,28 +83,48 @@ async def update_user_view(user_id: str,user: methods.User, db: Session = Depend
    return user      
 
 #get all the time-slots of an user schedule-call
-@app.get('/user/{user_id}/slots/')
+@app.get('/users/{user_id}/slots/')
 async def get_schedules_view(user_id: str,db:Session=Depends(get_db)):
      return methods.get_slots(user_id,db)
 
+#get all the time slots for all users
+@app.get('/users/slots/')
+async def get_all_slots_view(db:Session=Depends(get_db)):
+     return methods.get_all_slots(db)
+
+#get all the time slots for a given role
+@app.get('/users/slots/{role}')
+async def get_slots_role_view(role: str,db:Session=Depends(get_db)):
+    return methods.get_slots_by_role(role,db)
+
 #post all the time-slots of an user -call
-@app.post("/user/{user_id}/slots/",response_model=List[str])
+@app.post("/users/{user_id}/slots/",response_model=List[str])
 async def post_schedules_view(user_id: str,schedules:methods.Slots, db: Session=Depends(get_db)):
     user_slots = methods.post_schedule(user_id,schedules,db)
     return user_slots
 
 #get the schedules of a candidate and his/her interviewers
-@app.get('user/{user_id}/schedules/',response_model=List[methods.Schedules])
+'''Should retrieve a list of schedules with:
+-Id of the candidate
+-first name and last name of the candidate
+-slots matched
+-name of the interviewers
+'''
+
+@app.get('/users/{user_id}/schedules/')
 async def get_candidate_schedules_view(user_id: str,db:Session=Depends(get_db)):
-    return methods.get_schedules_user(db,user_id)
+    return methods.get_candidate_schedules(user_id,db)
+
 
 #root
 @app.get('/')
 async def root(alan: int = 1):
     return {'message': 'Interviews Scheduler','alan': "Alan Jorge Alves do Carmo: v. {alan}" }
-'''
+    
+
 #create a Login:
 #https://www.youtube.com/watch?v=xZnOoO3ImSY&ab_channel=IanRufus
+'''
 @app.post("/login")
 def login():
     return{}
@@ -115,9 +136,9 @@ def unprotected():
 @app.get("/protected")
 def protected():
     return{}        
-
+'''
 #The calendar part
-
+'''
 @app.get("/calendars/{id}")
 def calendar(id: int ,test: str, definition: str ):
     return {"id": id,"first word": test,"2nd word": definition }    
