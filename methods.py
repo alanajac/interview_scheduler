@@ -18,7 +18,7 @@ class User(BaseModel):
     last_name: str
     middle_name: Optional[str]
     email: str
-    roles: Roles
+    role: Roles
 
 
     class Config:
@@ -36,7 +36,7 @@ class Slots(BaseModel):
 class Slot_Table(BaseModel):
     id: str
     user_id: str
-    roles: str
+    role: str
     slot: str
 
     class Config:
@@ -73,7 +73,7 @@ def create_user(db: Session, user: User):
     db_user.last_name = user.last_name
     db_user.middle_name = user.middle_name
     db_user.email = user.email
-    db_user.roles = user.roles
+    db_user.role= user.role
     db.add(db_user)
     db.commit()
     #db.refresh(db_user)
@@ -89,35 +89,41 @@ def delete_user(db: Session, user_id: str):
 
 #get all the slots of one user-function
 def get_slots(user_id: str,db: Session):
-    return db.query(models.DBSchedule).where(models.DBSchedule.user_id == user_id).all()
+    return db.query(models.DBSlots).where(models.DBSlots.user_id == user_id).all()
 
 #CHECK THESE OUT
 #get all the time slots of all users
 def get_all_slots(db:Session):
-    return db.query(models.DBSchedule).all()
+    return db.query(models.DBSlots).all()
 '''def get_all_slots(db:Session):
     all_slots = Slot_Table()
-    for instance in models.DBSchedule:
-        all_slots.id = models.DBSchedule.id 
-        all_slots.user_id = models.DBSchedule.user_id
-        all_slots.roles = models.DBSchedule.roles
-        all_slots.slot = models.DBSchedule.slots
-#    all_slots = db.query(models.DBSchedule).all()
+    for instance in models.DBSlots:
+        all_slots.id = models.DBSlots.id 
+        all_slots.user_id = models.DBSlots.user_id
+        all_slots.role = models.DBSlots.role
+        all_slots.slot = models.DBSlots.slots
+#    all_slots = db.query(models.DBSlots).all()
     return all_slots
 '''
+#delete all time slots of an user:
+def delete_slots(db: Session, user_id: str):
+    slots=db.query(models.DBSlots.id).filter(models.DBSlots.user_id==user_id).all()
+    db.delete(slots)
+    db.commit()
+    return
 
 #get all the time slots for a given role
 def get_slots_by_role(role_name: str,db:Session):
-    return db.query(models.DBSchedule).where(models.DBSchedule.roles== role_name).all()
+    return db.query(models.DBSlots).where(models.DBSlots.role== role_name).all()
 
 #post a schedule-function
 def post_schedule(user_id: str,schedules:Slots,db:Session):
     user=get_user(db,user_id)
     for slot in schedules.slots:
-        slot_model = models.DBSchedule()
+        slot_model = models.DBSlots()
         slot_model.id = str(uuid4())    
         slot_model.user_id = user.id
-        slot_model.roles = user.roles
+        slot_model.role = user.role
         slot_model.slots = slot
         db.add(slot_model)
         db.commit()
@@ -125,53 +131,80 @@ def post_schedule(user_id: str,schedules:Slots,db:Session):
     return schedules.slots
 
 '''
-#Query to get the schedules between candidate and interviewers    
+  
 
 select c.user_id as "candidate id", u.first_name "candidate name", u.last_name " candidate surname",i.user_id as "interviewer id",u2.first_name as "interviewer name", c.slots as "time slots"
 from Schedules c 
 inner join Users u on c.user_id = u.id and u.id = "1582721e-625c-4f70-97cc-9eb17a2810ff"
-inner join Schedules i on c.slots = i.slots and i.roles = "interviewer" 
+inner join Schedules i on c.slots = i.slots and i.role = "interviewer" 
 inner join Users u2 on u2.id = i.user_id;
 #columns should be:
-c.user_id as "candidate id" - DBSchedule_in.user_id ok
+c.user_id as "candidate id" - DBSlots_in.user_id ok
 u.first_name "candidate name" -  DBUser_in.first_name ok
 u.last_name " candidate surname" -  DBUser_in.last_name ok
-i.user_id as "interviewer id" - DBSchedule_out.user_id
+i.user_id as "interviewer id" - DBSlots_out.user_id
 u2.first_name as "interviewer name" DBUser_out.first_name
-c.slots as "time slots" DBSchedule_in.slots
+c.slots as "time slots" DBSlots_in.slots
 DB_
 '''
+#Query to get the schedules between candidate and interviewers  -one candidate, all interviewers
+#it works!
+'''
 def get_candidate_schedules(user_input: str,db:Session):
-    DBSchedule_in = aliased(models.DBSchedule)
-    DBSchedule_out = aliased(models.DBSchedule)
+    DBSlots_in = aliased(models.DBSlots)
+    DBSlots_out = aliased(models.DBSlots)
     DBUser_in = aliased(models.DBUser)
     DBUser_out = aliased(models.DBUser)
-    #slots_user = get_slots(user_input,db)
-    #user = get_user(db,user_input)
-    #slots_interviewer=get_slots_by_role("interviewer",db)
-    #get list of all the Schedules
-       #3rd attempt
-    return db.query(DBSchedule_in.user_id.label("candidate id"),DBUser_in.first_name.label("candidate name"),DBUser_in.last_name.label("candidate surname"),DBSchedule_out.user_id.label("interviewer id"),DBUser_out.first_name.label("interviewer name"),DBSchedule_in.slots.label("time slots")).select_from(DBSchedule_in) \
-    .join(DBUser_in,and_(DBSchedule_in.user_id == DBUser_in.id,DBUser_in.id==user_input))\
-    .join(DBSchedule_out,and_(DBSchedule_in.slots == DBSchedule_out.slots,DBSchedule_out.roles == "interviewer"))\
-    .join(DBUser_out,DBUser_out.id==DBSchedule_out.user_id).order_by(DBSchedule_in.slots).all()
+    #3rd attempt
     
-    #1st attempt
-    #return db.query(DBSchedule_in).join(DBUser_in).filter(DBSchedule_in.user_id==DBUser_in.id).filter(DBUser_in.id==user_input).join(DBSchedule_out).filter(DBSchedule_out.slots == DBSchedule_in.slots).filter(DBSchedule_out.roles == "interviewer").join(DBUser_out).filter(DBUser_out.id==DBSchedule_out.user_id).with_entities(DBSchedule_in.user_id,DBUser_in.first_name,DBUser_in.last_name,DBSchedule_out.user_id,DBUser_out.first_name,DBSchedule_in.slots).all()
-    
-    #2nd attempt
-    '''
-    return db.query(DBSchedule_in.user_id,DBUser_in.first_name,DBUser_in.last_name,DBSchedule_out.user_id,DBUser_out.first_name,DBSchedule_in.slots).select_from(DBSchedule_in) \
-    .join(DBUser_in).filter(DBSchedule_in.user_id == DBUser_in.id).filter(DBUser_in.id==user_input)\
-    .join(DBSchedule_out).filter(DBSchedule_in.slots == DBSchedule_out.slots).filter(DBSchedule_out.roles == "interviewer")\
-    .join(DBUser_out).filter(DBUser_out.id==DBSchedule_out.user_id).all()
-    '''
- 
-    #get from several interviewers:
-    '''
-    for interviewer in list_interviewers:
-        db.query(DBSchedule_in).join(DBUser_in).filter(DBSchedule_in.user_id==DBUser_in.id).filter(DBUser_in.id==user_input).join(DBSchedule_out).filter(DBSchedule_out.slots == DBSchedule_in.slots).filter(DBSchedule_out.user_id == interviewer).join(DBUser_out).filter(DBUser_out.id==DBUser_in.id).with_entities(DBSchedule_in.user_id,DBUser_in.first_name,DBUser_in.last_name,DBSchedule_out.user_id,DBUser_out.first_name,DBSchedule_in.slots).all()
-    #db.query(models.DBSchedule,models.DBUser,models.DBSchedule).all()
-    '''
-    #db.query(models.DBSchedule).where(models.DBSchedule.user_id==user_id)  
+    return db.query(DBSlots_in.user_id.label("candidate id"),DBUser_in.first_name.label("candidate name"),DBUser_in.last_name.label("candidate surname"),DBSlots_out.user_id.label("interviewer id"),DBUser_out.first_name.label("interviewer name"),DBSlots_in.slots.label("time slots")).select_from(DBSlots_in) \
+    .join(DBUser_in,and_(DBSlots_in.user_id == DBUser_in.id,DBUser_in.id==user_input))\
+    .join(DBSlots_out,and_(DBSlots_in.slots == DBSlots_out.slots,DBSlots_out.role == "interviewer"))\
+    .join(DBUser_out,DBUser_out.id==DBSlots_out.user_id).order_by(DBSlots_in.slots).all()
 
+#List comprehensions -work-query
+    result = [(db.query(DBSlots_in.user_id.label("candidate id"),DBUser_in.first_name.label("candidate name"),DBUser_in.last_name.label("candidate surname"),DBSlots_out.user_id.label("interviewer id"),DBUser_out.first_name.label("interviewer name"),DBSlots_in.slots.label("time slots")).select_from(DBSlots_in) \
+    .join(DBUser_in,and_(DBSlots_in.user_id == DBUser_in.id,DBUser_in.id==user_input))\
+    .join(DBSlots_out,and_(DBSlots_in.slots == DBSlots_out.slots,DBSlots_out.user_id == interviewer)).join(DBUser_out,DBUser_out.id==DBSlots_out.user_id).order_by(DBSlots_in.slots)).all() for interviewer in interviewers]
+'''    
+#Query to get the schedules between candidate and a list of interviewers
+     
+def get_candidate_schedules(user_input: str,interviewers:List[str],db:Session):
+    print(interviewers)
+    DBSlots_in = aliased(models.DBSlots)
+    DBSlots_out = aliased(models.DBSlots)
+    DBUser_in = aliased(models.DBUser)
+    DBUser_out = aliased(models.DBUser)
+    
+    result = (db.query(DBSlots_in.user_id.label("candidate id"),DBUser_in.first_name.label("candidate name"),DBUser_in.last_name.label("candidate surname"),DBSlots_out.user_id.label("interviewer id"),DBUser_out.first_name.label("interviewer name"),DBSlots_in.slots.label("time slots")).select_from(DBSlots_in) \
+    .join(DBUser_in,and_(DBSlots_in.user_id == DBUser_in.id,DBUser_in.id==user_input))\
+    .join(DBSlots_out,and_(DBSlots_in.slots == DBSlots_out.slots,DBSlots_out.user_id.in_(interviewers))).join(DBUser_out,DBUser_out.id==DBSlots_out.user_id).order_by(DBSlots_in.slots)).all()
+
+    return result
+    
+'''    #3rd attempt
+    result = db.query(DBSlots_in.user_id.label("candidate id"),DBUser_in.first_name.label("candidate name"),DBUser_in.last_name.label("candidate surname"),DBSlots_out.user_id.label("interviewer id"),DBUser_out.first_name.label("interviewer name"),DBSlots_in.slots.label("time slots")).select_from(DBSlots_in) \
+    .join(DBUser_in,and_(DBSlots_in.user_id == DBUser_in.id,DBUser_in.id==user_input))\
+    .join(DBSlots_out,and_(DBSlots_in.slots == DBSlots_out.slots,DBSlots_out.user_id == 'a14076ca-5ee0-4995-b253-5d91240094ca')).join(DBUser_out,DBUser_out.id==DBSlots_out.user_id).order_by(DBSlots_in.slots).all()
+
+    return result
+'''
+#commetn
+''' 
+    return result
+    result = [(db.query(DBSlots_in.user_id.label("candidate id"),DBUser_in.first_name.label("candidate name"),DBUser_in.last_name.label("candidate surname"),DBSlots_out.user_id.label("interviewer id"),DBUser_out.first_name.label("interviewer name"),DBSlots_in.slots.label("time slots")).select_from(DBSlots_in) \
+    .join(DBUser_in,and_(DBSlots_in.user_id == DBUser_in.id,DBUser_in.id==user_input))\
+    .join(DBSlots_out,and_(DBSlots_in.slots == DBSlots_out.slots,DBSlots_out.user_id == interviewer)).join(DBUser_out,DBUser_out.id==DBSlots_out.user_id).order_by(DBSlots_in.slots)).all() for interviewer in interviewers]
+   
+
+     #Using list comprehensions:
+    #my_list = [param for param in iterable]
+    Sane as: for char in 'hello':
+                my_list.append(char)
+    my_list = [char for char in 'hello']            
+    hello-> our input list
+    first char: ?-variable ->our expression?
+    second_char: ?
+    first char is an expression
+    my_list = [expression for parameter in iterable]
+'''

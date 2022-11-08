@@ -28,18 +28,18 @@ class DBUser(Base):
     last_name = Column(String(50))
     middle_name = Column(String(50))
     email = Column(String(50))
-    roles = Column(String)
+    role = Column(String)
     
-#    schedules = relationship("DBSchedule", back_populates="user")
+    schedules = relationship("DBSlots", back_populates="user",cascade="all,delete,delete-orphan")
 
-class DBSchedule(Base):
+class DBSlots(Base):
     __tablename__ = 'Slots'
     id =  Column(String,primary_key=True,index=True )
     user_id = Column(String,ForeignKey("Users.id"))
-    roles = Column(String(50))
+    role = Column(String(50))
     slots = Column(String(50))
 
-#    user = relationship("DBUser", back_populates="schedules")#->Not necessary to this 
+    user = relationship("DBUser", back_populates="schedules")#->Not necessary to this 
     
 
 

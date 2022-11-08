@@ -1,4 +1,53 @@
+{
+  "first_name": "Joãozinho",
+  "last_name": "Inverno",
+  "middle_name": "",
+  "email": "johnny@winter.com",
+  "role": "interviewer"
+}
 
+{
+  "first_name": "John",
+  "last_name": "Lennon",
+  "middle_name": "",
+  "email": "iloveyoko@beatles.com",
+  "role": "interviewer"
+}
+{
+  "first_name": "Richard",
+  "last_name": "Feynman",
+  "middle_name": "",
+  "email": "feynman@physics.com",
+  "role": "interviewer"
+}
+{
+  "first_name": "Ueshiba",
+  "last_name": "Morihei",
+  "middle_name": "",
+  "email": "ueshiba@aikikai.com",
+  "role": "interviewer"
+}
+{
+  "first_name": "Alan",
+  "last_name": "Carmo",
+  "middle_name": "",
+  "email": "alan@email.com",
+  "role": "candidate"
+}
+{
+  "first_name": "Isaac",
+  "last_name": "Asimov",
+  "middle_name": "",
+  "email": "isaac@foundation.com",
+  "role": "candidate"
+}
+{
+  "first_name": "Janka",
+  "last_name": "Megiesi",
+  "middle_name": "",
+  "email": "jankita@email.com",
+  "role": "candidate"
+}
 #Slots interviewer 1
 {
   "slots": [
@@ -30,57 +79,13 @@
   ]
 }
 
-{
-  "first_name": "Joãozinho",
-  "last_name": "Inverno",
-  "middle_name": "",
-  "email": "johnny@winter.com",
-  "roles": "interviewer"
-}
 
+//slots of interviewers
 {
-  "first_name": "John",
-  "last_name": "Lennon",
-  "middle_name": "",
-  "email": "iloveyoko@beatles.com",
-  "roles": "interviewer"
+  "slots": [
+    "4c1d687a-d47a-4070-bf8d-feaf444a0fbd","9ad143d2-db50-470c-a8e6-c82da28d9bbf"
+  ]
 }
-{
-  "first_name": "Richard",
-  "last_name": "Feynman",
-  "middle_name": "",
-  "email": "feynman@physics.com",
-  "roles": "interviewer"
-}
-{
-  "first_name": "Morihei",
-  "last_name": "Ueshiba",
-  "middle_name": "",
-  "email": "ueshiba@aikikai.com",
-  "roles": "interviewer"
-}
-{
-  "first_name": "Alan",
-  "last_name": "Carmo",
-  "middle_name": "",
-  "email": "alan@email.com",
-  "roles": "candidate"
-}
-{
-  "first_name": "Isaac",
-  "last_name": "Asimov",
-  "middle_name": "",
-  "email": "isaac@foundation.com",
-  "roles": "candidate"
-}
-{
-  "first_name": "Janka",
-  "last_name": "Megiesi",
-  "middle_name": "",
-  "email": "jankita@email.com",
-  "roles": "candidate"
-}
-
 
 
 select c.user_id as "candidate id", u.first_name "candidate name", u.last_name " candidate surname",i.user_id as "interviewer id",u2.first_name as "interviewer name", c.slots as "time slots"

@@ -1,5 +1,5 @@
 #libraries
-from fastapi import FastAPI,HTTPException,Depends
+from fastapi import FastAPI,HTTPException,Depends,Query
 from pydantic import BaseModel,Field
 from uuid import UUID, uuid4
 from typing import Union,List,Optional
@@ -26,9 +26,9 @@ def get_db():
 
 '''
 class Schedules_lst():
-    def __init__(self,id=None,roles=None,dates_and_times=[]):
+    def __init__(self,id=None,role=None,dates_and_times=[]):
         self.id = id
-        self.roles = roles
+        self.role = role
         for slots in dates_and_times:
             dates_and_times = datetime.strptime(slots,'%d/%m/%Y %H:%M')
         self.dates_and_times=dates_and_times.append(slots)
@@ -39,19 +39,6 @@ class Schedules_lst():
     #        self.dates_and_times.append(slots) 
         
     #    return self.dates_and_times
-
-        
-#retrieve one user -call
-@app.get('/users/{user_id}')
-def get_user_view(user_id: str, db: Session = Depends(get_db)):
-    return methods.get_user(db, user_id)
-
-#Retrieve all users -call
-@app.get('/users/', response_model=List[methods.User])
-def get_user_view(db: Session = Depends(get_db)):
-    return methods.get_users(db)
-
-    
 #Create a new user-call
 @app.post('/users/', response_model = methods.User)
 def create_user_view(user: methods.User, db: Session = Depends(get_db)):
@@ -59,10 +46,17 @@ def create_user_view(user: methods.User, db: Session = Depends(get_db)):
     return db_user
 
 
-#delete an user-call
-@app.delete('/users/{user_id}')
-async def delete_user_view(user_id: str,db: Session = Depends(get_db)):
-    return methods.delete_user(db,user_id)
+#retrieve one user -call
+@app.get('/users/{user_id}')
+def get_user_view(user_id: str, db: Session = Depends(get_db)):
+    return methods.get_user(db, user_id)
+
+
+#Retrieve all users -call
+@app.get('/users/', response_model=List[methods.User])
+def get_user_view(db: Session = Depends(get_db)):
+    return methods.get_users(db)
+
 
 #update an user-function and call
 @app.put("/users/{user_id}")
@@ -76,11 +70,24 @@ async def update_user_view(user_id: str,user: methods.User, db: Session = Depend
    user_model.last_name = user.last_name
    user_model.middle_name = user.middle_name
    user_model.email = user.email
-   user_model.roles = user.roles
+   user_model.role = user.role
 
    db.add(user_model)
    db.commit()
-   return user      
+   return user   
+
+
+#delete an user-call
+@app.delete('/users/{user_id}')
+async def delete_user_view(user_id: str,db: Session = Depends(get_db)):
+    return methods.delete_user(db,user_id)
+
+#post all the time-slots of an user -call
+@app.post("/users/{user_id}/slots/",response_model=List[str])
+async def post_schedules_view(user_id: str,schedules:methods.Slots, db: Session=Depends(get_db)):
+    user_slots = methods.post_schedule(user_id,schedules,db)
+    return user_slots
+
 
 #get all the time-slots of an user schedule-call
 @app.get('/users/{user_id}/slots/')
@@ -95,14 +102,26 @@ async def get_all_slots_view(db:Session=Depends(get_db)):
 #get all the time slots for a given role
 @app.get('/users/slots/{role}')
 async def get_slots_role_view(role: str,db:Session=Depends(get_db)):
-    return methods.get_slots_by_role(role,db)
+    return methods.get_slots_by_role(role,db)     
 
-#post all the time-slots of an user -call
-@app.post("/users/{user_id}/slots/",response_model=List[str])
-async def post_schedules_view(user_id: str,schedules:methods.Slots, db: Session=Depends(get_db)):
-    user_slots = methods.post_schedule(user_id,schedules,db)
-    return user_slots
+#delete time slots of an user:
+@app.delete('/users/{user_id}/slots/')
+async def delete_slots_view(user_id: str,db: Session = Depends(get_db)):
+    return methods.delete_slots(db,user_id)
 
+#update time-slots for an user
+@app.put("/users/{user_id}/slots/")
+async def update_slots_view(user_id: str,slots: methods.Slots, db: Session = Depends(get_db)):
+   slot_model = db.query(models.DBSlots).filter(models.DBSlots.id == user_id).all() 
+   if slot_model is None:
+    raise HTTPException(
+        status_code=404,detail=f"ID{user_id}: Does not exist"
+    )
+   methods.delete_slots(db,user_id) 
+   slots_update=[db.add(slot_model).where for slot in slots]
+   db.commit()
+   return slots_update
+     
 #get the schedules of a candidate and his/her interviewers
 '''Should retrieve a list of schedules with:
 -Id of the candidate
@@ -110,10 +129,20 @@ async def post_schedules_view(user_id: str,schedules:methods.Slots, db: Session=
 -slots matched
 -name of the interviewers
 '''
-
+#get the schedules of a given user for all interviewers
+'''
 @app.get('/users/{user_id}/schedules/')
 async def get_candidate_schedules_view(user_id: str,db:Session=Depends(get_db)):
     return methods.get_candidate_schedules(user_id,db)
+'''
+#If we want too query also the interviewers list
+
+@app.get('/users/{user_id}/schedules/')
+async def get_candidate_schedules_view(user_id: str,interviewers: Union[List[str],None]=Query(default=None),db:Session=Depends(get_db)):
+    return methods.get_candidate_schedules(user_id,interviewers,db)
+
+
+
 
 
 #root
