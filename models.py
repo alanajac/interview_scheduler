@@ -39,7 +39,7 @@ class DBSlots(Base):
     role = Column(String(50))
     slots = Column(String(50))
 
-    user = relationship("DBUser", back_populates="schedules")#->Not necessary to this 
+    user = relationship("DBUser", back_populates="schedules",passive_deletes=True)#->Not necessary to this 
     
 
 

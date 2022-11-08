@@ -106,9 +106,9 @@ def get_all_slots(db:Session):
     return all_slots
 '''
 #delete all time slots of an user:
-def delete_slots(db: Session, user_id: str):
-    slots=db.query(models.DBSlots.id).filter(models.DBSlots.user_id==user_id).all()
-    db.delete(slots)
+def delete_slots(user_id: str,db: Session):
+    for slot in db.query(models.DBSlots).filter(models.DBSlots.user_id==user_id).all():
+        db.delete(slot)
     db.commit()
     return
 

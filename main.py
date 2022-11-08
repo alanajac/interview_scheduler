@@ -107,7 +107,7 @@ async def get_slots_role_view(role: str,db:Session=Depends(get_db)):
 #delete time slots of an user:
 @app.delete('/users/{user_id}/slots/')
 async def delete_slots_view(user_id: str,db: Session = Depends(get_db)):
-    return methods.delete_slots(db,user_id)
+    return methods.delete_slots(user_id,db)
 
 #update time-slots for an user
 @app.put("/users/{user_id}/slots/")
