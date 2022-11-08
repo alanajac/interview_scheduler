@@ -84,8 +84,8 @@ async def delete_user_view(user_id: str,db: Session = Depends(get_db)):
 
 #post all the time-slots of an user -call
 @app.post("/users/{user_id}/slots/",response_model=List[str])
-async def post_schedules_view(user_id: str,schedules:methods.Slots, db: Session=Depends(get_db)):
-    user_slots = methods.post_schedule(user_id,schedules,db)
+async def post_slots_user_view(user_id: str,schedules:methods.Slots, db: Session=Depends(get_db)):
+    user_slots = methods.post_slots_user(user_id,schedules,db)
     return user_slots
 
 
@@ -112,15 +112,18 @@ async def delete_slots_view(user_id: str,db: Session = Depends(get_db)):
 #update time-slots for an user
 @app.put("/users/{user_id}/slots/")
 async def update_slots_view(user_id: str,slots: methods.Slots, db: Session = Depends(get_db)):
-   slot_model = db.query(models.DBSlots).filter(models.DBSlots.id == user_id).all() 
-   if slot_model is None:
+    return methods.update_slots(user_id,slots,db)
+    '''
+    if slot_model is None:
+    
     raise HTTPException(
         status_code=404,detail=f"ID{user_id}: Does not exist"
     )
-   methods.delete_slots(db,user_id) 
-   slots_update=[db.add(slot_model).where for slot in slots]
-   db.commit()
-   return slots_update
+    return methods.update_slots(user_id,db)
+   '''
+    
+   
+   
      
 #get the schedules of a candidate and his/her interviewers
 '''Should retrieve a list of schedules with:

@@ -80,6 +80,7 @@ def create_user(db: Session, user: User):
 
     return db_user
 
+#delete user - method
 def delete_user(db: Session, user_id: str):
     user =  get_user(db,user_id)
     if user:
@@ -87,12 +88,12 @@ def delete_user(db: Session, user_id: str):
         db.commit()
         return
 
-#get all the slots of one user-function
+#get all the slots of one user-method
 def get_slots(user_id: str,db: Session):
     return db.query(models.DBSlots).where(models.DBSlots.user_id == user_id).all()
 
 #CHECK THESE OUT
-#get all the time slots of all users
+#get all the time slots of all users - method
 def get_all_slots(db:Session):
     return db.query(models.DBSlots).all()
 '''def get_all_slots(db:Session):
@@ -105,19 +106,24 @@ def get_all_slots(db:Session):
 #    all_slots = db.query(models.DBSlots).all()
     return all_slots
 '''
-#delete all time slots of an user:
+#Update all the time slots of an user
+def update_slots(user_id: str,slots:Slots,db:Session):
+    delete_slots(user_id,db)
+    return post_slots_user(user_id,slots,db) 
+
+#delete all time slots of an user  - method
 def delete_slots(user_id: str,db: Session):
     for slot in db.query(models.DBSlots).filter(models.DBSlots.user_id==user_id).all():
         db.delete(slot)
     db.commit()
     return
 
-#get all the time slots for a given role
+#get all the time slots for a given role - method
 def get_slots_by_role(role_name: str,db:Session):
     return db.query(models.DBSlots).where(models.DBSlots.role== role_name).all()
 
-#post a schedule-function
-def post_schedule(user_id: str,schedules:Slots,db:Session):
+#post slots for a given user- method
+def post_slots_user(user_id: str,schedules:Slots,db:Session):
     user=get_user(db,user_id)
     for slot in schedules.slots:
         slot_model = models.DBSlots()
