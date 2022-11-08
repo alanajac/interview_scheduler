@@ -1,11 +1,11 @@
 from uuid import UUID, uuid4
-from datetime import datetime,timedelta
+import datetime
 from pydantic import BaseModel,Field
 from typing import Union,List,Optional
 #from agenda_sch import TimeSchedule
 from add_database import Base
 from enum import Enum
-from sqlalchemy import Column, String,Integer,ForeignKey
+from sqlalchemy import Column, String,Integer,ForeignKey,DateTime
 from sqlalchemy.orm import relationship
 from add_database import engine
 #from fastapi_utils.guid_type import GUID
@@ -37,7 +37,7 @@ class DBSlots(Base):
     id =  Column(String,primary_key=True,index=True )
     user_id = Column(String,ForeignKey("Users.id"))
     role = Column(String(50))
-    slots = Column(String(50))
+    slots = Column(DateTime)
 
     user = relationship("DBUser", back_populates="schedules",passive_deletes=True)#->Not necessary to this 
     

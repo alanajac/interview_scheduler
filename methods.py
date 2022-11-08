@@ -5,7 +5,7 @@ from typing import Union,List,Optional
 from uuid import UUID, uuid4
 from enum import Enum
 from pydantic import BaseModel,Field
-
+from datetime import datetime
 
 class Roles(str,Enum):
     candidate = "candidate"
@@ -54,7 +54,11 @@ class Schedules(BaseModel):
     class Config:
         orm_mode = True
 
+#Helper method: String to datetime:
+def string_to_datetime(date: str):
+     return datetime.strptime(date,"%d/%m/%y %H:%M")
 
+#-------------------------USER TABLE METHODS -------------------------------------------------------
 #Retrieve one user
 def get_user(db: Session, user_id: str):
     return db.query(models.DBUser).where(models.DBUser.id == user_id).first()
@@ -87,25 +91,34 @@ def delete_user(db: Session, user_id: str):
         db.delete(user)
         db.commit()
         return
-
+#------------------------TIME SLOTS TABLE METHODS ---------------------------------------------
 #get all the slots of one user-method
+#post slots for a given user- method
+def post_slots_user(user_id: str,schedules:Slots,db:Session):
+    #datetime_slot=[string_to_datetime(schedules.slots) for slot in schedules.slots]
+    user=get_user(db,user_id)
+    for slot in schedules.slots:
+        datetime_slot =string_to_datetime(slot)
+        slot_model = models.DBSlots()
+        slot_model.id = str(uuid4())    
+        slot_model.user_id = user.id
+        slot_model.role = user.role
+        slot_model.slots = datetime_slot
+        db.add(slot_model)
+        db.commit()
+    
+    return schedules.slots
+
+
 def get_slots(user_id: str,db: Session):
     return db.query(models.DBSlots).where(models.DBSlots.user_id == user_id).all()
 
-#CHECK THESE OUT
+
 #get all the time slots of all users - method
 def get_all_slots(db:Session):
     return db.query(models.DBSlots).all()
-'''def get_all_slots(db:Session):
-    all_slots = Slot_Table()
-    for instance in models.DBSlots:
-        all_slots.id = models.DBSlots.id 
-        all_slots.user_id = models.DBSlots.user_id
-        all_slots.role = models.DBSlots.role
-        all_slots.slot = models.DBSlots.slots
-#    all_slots = db.query(models.DBSlots).all()
-    return all_slots
-'''
+
+
 #Update all the time slots of an user
 def update_slots(user_id: str,slots:Slots,db:Session):
     delete_slots(user_id,db)
@@ -122,19 +135,6 @@ def delete_slots(user_id: str,db: Session):
 def get_slots_by_role(role_name: str,db:Session):
     return db.query(models.DBSlots).where(models.DBSlots.role== role_name).all()
 
-#post slots for a given user- method
-def post_slots_user(user_id: str,schedules:Slots,db:Session):
-    user=get_user(db,user_id)
-    for slot in schedules.slots:
-        slot_model = models.DBSlots()
-        slot_model.id = str(uuid4())    
-        slot_model.user_id = user.id
-        slot_model.role = user.role
-        slot_model.slots = slot
-        db.add(slot_model)
-        db.commit()
-    
-    return schedules.slots
 
 '''
   
@@ -195,7 +195,7 @@ def get_candidate_schedules(user_input: str,interviewers:List[str],db:Session):
 
     return result
 '''
-#commetn
+#comment
 ''' 
     return result
     result = [(db.query(DBSlots_in.user_id.label("candidate id"),DBUser_in.first_name.label("candidate name"),DBUser_in.last_name.label("candidate surname"),DBSlots_out.user_id.label("interviewer id"),DBUser_out.first_name.label("interviewer name"),DBSlots_in.slots.label("time slots")).select_from(DBSlots_in) \
