@@ -1,3 +1,4 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -6,7 +7,10 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 #SQLALCHEMY_DATABASE_URL = 'sqlite+pysqlite:///./db.sqlite3:'
 #Connecting the database
 SQLALCHEMY_DATABASE_URL = 'sqlite:///sqlite/sample.db'
-engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=True, future=True)
+#SQLALCHEMY_DATABASE_URI = (os.environ.get('SQLALCHEMY_DATABASE_URL') or \
+#    'sqlite:///'+os.path.join("/sqlite", 'sample.db'))+'?check_same_thread=False'
+#SQLALCHEMY_TRACK_MODIFICATIONS = False
+engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=True, future=True,connect_args={'check_same_thread': False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

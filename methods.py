@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 from enum import Enum
 from pydantic import BaseModel,Field
 from datetime import datetime
-
+from fastapi import HTTPException
 class Roles(str,Enum):
     candidate = "candidate"
     interviewer = "interviewer"
@@ -57,10 +57,25 @@ class Schedules(BaseModel):
 #Helper method: String to datetime:
 def string_to_datetime(date: str):
      return datetime.strptime(date,"%d/%m/%y %H:%M")
+#------------------------------ERROR HANDLING METHODS-------------------------------------------
+
+def user_exists(user_id:str,db:Session):
+    user_model = db.query(models.DBUser).filter(models.DBUser.id == user_id).first()
+    if user_model is None:
+        raise HTTPException(
+        status_code=404,detail=f"ID: {user_id} does not exist"
+    )
+def slots_exists(user_id:str,db:Session):
+    slots_model = db.query(models.DBSlots).filter(models.DBSlots.user_id == user_id).first()
+    if slots_model is None:
+        raise HTTPException(
+        status_code=404,detail=f"There are no time slots for ID: {user_id}"
+    )    
+
 
 #-------------------------USER TABLE METHODS -------------------------------------------------------
 #Retrieve one user
-def get_user(db: Session, user_id: str):
+def get_user(user_id: str,db:Session):
     return db.query(models.DBUser).where(models.DBUser.id == user_id).first()
 
 
@@ -69,7 +84,7 @@ def get_users(db: Session):
     return db.query(models.DBUser).all()
 
 #Create a new user
-def create_user(db: Session, user: User):
+def create_user(user: User,db:Session):
     #db_user = models.DBUser(**user.dict())
     db_user = models.DBUser()
     db_user.id = str(uuid4())
@@ -86,7 +101,7 @@ def create_user(db: Session, user: User):
 
 #delete user - method
 def delete_user(db: Session, user_id: str):
-    user =  get_user(db,user_id)
+    user =  get_user(user_id,db)
     if user:
         db.delete(user)
         db.commit()
@@ -96,7 +111,7 @@ def delete_user(db: Session, user_id: str):
 #post slots for a given user- method
 def post_slots_user(user_id: str,schedules:Slots,db:Session):
     #datetime_slot=[string_to_datetime(schedules.slots) for slot in schedules.slots]
-    user=get_user(db,user_id)
+    user=get_user(user_id,db)
     for slot in schedules.slots:
         datetime_slot =string_to_datetime(slot)
         slot_model = models.DBSlots()

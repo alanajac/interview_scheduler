@@ -24,47 +24,45 @@ def get_db():
     finally:
         db.close()
 
-'''
-class Schedules_lst():
-    def __init__(self,id=None,role=None,dates_and_times=[]):
-        self.id = id
-        self.role = role
-        for slots in dates_and_times:
-            dates_and_times = datetime.strptime(slots,'%d/%m/%Y %H:%M')
-        self.dates_and_times=dates_and_times.append(slots)
-'''        
-    #def schedules(self,dates_and_times):
-    #    for slots in dates_and_times:
-    #        datetime.strptime(slots,'%d/%m/%Y %H:%M')
-    #        self.dates_and_times.append(slots) 
-        
-    #    return self.dates_and_times
+#root
+@app.get('/')
+async def root(alan: int = 1):
+    return {'message': 'Interviews Scheduler','alan': "Alan Jorge Alves do Carmo: v. {alan}" }
+
+#----------------END POINTS--------------------------------------------------------
 #Create a new user-call
 @app.post('/users/', response_model = methods.User)
 def create_user_view(user: methods.User, db: Session = Depends(get_db)):
-    db_user = methods.create_user(db, user)
+    db_user = methods.create_user(user,db)
     return db_user
 
 
 #retrieve one user -call
 @app.get('/users/{user_id}')
 def get_user_view(user_id: str, db: Session = Depends(get_db)):
-    return methods.get_user(db, user_id)
+    methods.user_exists(user_id,db)
+    return methods.get_user(user_id,db)
 
 
 #Retrieve all users -call
-@app.get('/users/', response_model=List[methods.User])
-def get_user_view(db: Session = Depends(get_db)):
+@app.get('/users/')
+def get_all_users_view(db: Session = Depends(get_db)):
+    if db.query(models.DBUser).first() is None:
+        raise HTTPException(
+        status_code=400,detail=f"Table DBUser has no entries."
+    )
     return methods.get_users(db)
+             
+            
 
 
 #update an user-function and call
 @app.put("/users/{user_id}")
 async def update_user_view(user_id: str,user: methods.User, db: Session = Depends(get_db)):
-   user_model = db.query(models.DBUser).filter(models.DBUser.id == user_id).first() 
+   user_model = db.query(models.DBUser).filter(models.DBUser.id == user_id).first()
    if user_model is None:
     raise HTTPException(
-        status_code=404,detail=f"ID{user_id}: Does not exist"
+        status_code=404,detail=f"ID {user_id} does not exist"
     )
    user_model.first_name = user.first_name
    user_model.last_name = user.last_name
@@ -80,47 +78,60 @@ async def update_user_view(user_id: str,user: methods.User, db: Session = Depend
 #delete an user-call
 @app.delete('/users/{user_id}')
 async def delete_user_view(user_id: str,db: Session = Depends(get_db)):
+    methods.user_exists(user_id,db)
     return methods.delete_user(db,user_id)
 
 #post all the time-slots of an user -call
 @app.post("/users/{user_id}/slots/",response_model=List[str])
 async def post_slots_user_view(user_id: str,schedules:methods.Slots, db: Session=Depends(get_db)):
-    user_slots = methods.post_slots_user(user_id,schedules,db)
+    methods.user_exists(user_id,db)
+    try: user_slots = methods.post_slots_user(user_id,schedules,db)
+    except ValueError: 
+        raise HTTPException(
+        status_code=400,detail=f"Slots are not in correct format: %d%m%y %H:%M")
     return user_slots
 
 
 #get all the time-slots of an user schedule-call
 @app.get('/users/{user_id}/slots/')
-async def get_schedules_view(user_id: str,db:Session=Depends(get_db)):
-     return methods.get_slots(user_id,db)
+async def get_slots_user_view(user_id: str,db:Session=Depends(get_db)):
+    methods.user_exists(user_id,db)
+    methods.slots_exists(user_id,db) 
+    return methods.get_slots(user_id,db)
 
 #get all the time slots for all users
 @app.get('/users/slots/')
 async def get_all_slots_view(db:Session=Depends(get_db)):
+     if db.query(models.DBSlots).first() is None:
+        raise HTTPException(
+        status_code=400,detail=f"Table DBSlots has no entries."
+    )
      return methods.get_all_slots(db)
 
 #get all the time slots for a given role
 @app.get('/users/slots/{role}')
 async def get_slots_role_view(role: str,db:Session=Depends(get_db)):
+    try: role not in methods.Roles(role)
+    except ValueError:  
+        raise HTTPException(
+        status_code=400,detail=f"{role}: Is not a valid role."
+    )
     return methods.get_slots_by_role(role,db)     
 
 #delete time slots of an user:
 @app.delete('/users/{user_id}/slots/')
 async def delete_slots_view(user_id: str,db: Session = Depends(get_db)):
+    methods.user_exists(user_id,db)
+    methods.slots_exists(user_id,db)  
     return methods.delete_slots(user_id,db)
 
 #update time-slots for an user
 @app.put("/users/{user_id}/slots/")
 async def update_slots_view(user_id: str,slots: methods.Slots, db: Session = Depends(get_db)):
+    methods.user_exists(user_id,db)
+    methods.slots_exists(user_id,db) 
     return methods.update_slots(user_id,slots,db)
-    '''
-    if slot_model is None:
     
-    raise HTTPException(
-        status_code=404,detail=f"ID{user_id}: Does not exist"
-    )
-    return methods.update_slots(user_id,db)
-   '''
     
    
    
@@ -142,53 +153,31 @@ async def get_candidate_schedules_view(user_id: str,db:Session=Depends(get_db)):
 
 @app.get('/users/{user_id}/schedules/')
 async def get_candidate_schedules_view(user_id: str,interviewers: Union[List[str],None]=Query(default=None),db:Session=Depends(get_db)):
+    #routines to check if the id used for candidate and interviewers exist and corresponds to what they should
+    candidate = methods.get_user(user_id,db)
+    user_model = db.query(models.DBUser).filter(models.DBUser.id == user_id).first()
+    if user_model is None:
+      raise HTTPException(
+        status_code=404,detail=f"ID of candidate {user_id} does not exist"
+    )
+    if candidate.role!="candidate":
+        raise HTTPException(status_code=400,detail=f"{user_id}: is not the ID of a candidate.")
+    for interviewer in interviewers:
+        interviewer = methods.get_user(interviewer,db)
+        if interviewer is None:
+          raise HTTPException(
+        status_code=404,detail=f"ID of interviewer: {user_id} does not exist"
+    ) 
+        elif interviewer.role!="interviewer":
+                raise HTTPException(status_code=400,detail=f"{interviewer.id}: is not the ID of an interviewer.")
     return methods.get_candidate_schedules(user_id,interviewers,db)
 
 
 
 
 
-#root
-@app.get('/')
-async def root(alan: int = 1):
-    return {'message': 'Interviews Scheduler','alan': "Alan Jorge Alves do Carmo: v. {alan}" }
+
     
-
-#create a Login:
-#https://www.youtube.com/watch?v=xZnOoO3ImSY&ab_channel=IanRufus
-'''
-@app.post("/login")
-def login():
-    return{}
-
-@app.get("/unprotected")
-def unprotected():
-    return{}
-
-@app.get("/protected")
-def protected():
-    return{}        
-'''
-#The calendar part
-'''
-@app.get("/calendars/{id}")
-def calendar(id: int ,test: str, definition: str ):
-    return {"id": id,"first word": test,"2nd word": definition }    
-'''
-#@app.paste("calendars/{id}/{role}/{}")
-#def add_schedule("id": id, date: str, time_start: str, event_duration: int ):
-#    return {}
-
-"""Old version
-@app.get("/user/{user_name}{user_email}{user_role}")
-def read_userx(user_name: str,user_email: str, user_role: str):
-    user1 = userx(user_name,user_email,user_role)
-    return("the stats of the user are:"+user1.name,user1.email,user1.role)
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
-"""
 
 
 
