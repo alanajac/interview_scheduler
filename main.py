@@ -1,30 +1,33 @@
 #libraries
 from fastapi import FastAPI,HTTPException,Depends,Query
-from pydantic import BaseModel,Field
-from uuid import UUID, uuid4
-from typing import Union,List,Optional
-from enum import Enum
-from datetime import datetime
+from typing import Union,List
 from sqlalchemy.orm import Session
 #other files
 import models
 import add_database
 import methods
 #from agenda_sch import TimeSchedule
-
+#from uuid import UUID, uuid4
+#from enum import Enum
+#from datetime import datetime
+#from pydantic import BaseModel,Field
 
 description = '''
 This is the documentation for a Interview Scheduler API developed by Alan Jorge Alves do Carmo, 09/11/2022.
 
-This API gives a List a schedule of the possible time-slots for a Job Interview of a candidate and its respective interviewers. That is done in the following procedure:
+There may be two roles that use this API, a candidate and an interviewer. A typical scenario is when:
 
-1st. The client add a candidate and insert its parameters in a local database through the API, which includes some basic information of the candidate, its role as a "candidate", the time-slots of availability of the candidate and generate an unique identification number for the candidate.
 
-2nd. The client do the same for one or more interviewers.
+An interview slot is a 1-hour period of time that spreads from the beginning of any hour until the beginning of the next hour. For example, a time span between 9am and 10am is a valid interview slot, whereas between 9:30am and 10:30am is not.
 
-3rd. The client is then capable of collect all the possible time-slots that match the candidate and one or more of the chosen interviewers using another endpoint for that.
 
-The API also provides a few more endpoints which allows the client to add new users as candidates or interviewers, erase or modify their parameters and time-slots availabilities for the Interview Schedule.'''
+Each of the interviewers sets their availability slots. For example, the interviewer Ines is available next week each day from 9am through 4pm without breaks and the interviewer Ingrid is available from 12pm to 6pm on Monday and Wednesday next week, and from 9am to 12pm on Tuesday and Thursday.
+
+
+Each of the candidates sets their requested slots for the interview. For example, the candidate Carl is available for the interview from 9am to 10am any weekday next week and from 10am to 12pm on Wednesday.
+
+
+Anyone may then query the API to get a collection of periods of time when it’s possible to arrange an interview for a particular candidate and one or more interviewers. In this example, if the API queries for the candidate Carl and interviewers Ines and Ingrid, the response should be a collection of 1-hour slots: from 9am to 10am on Tuesday, from 9am to 10am on Thursday.'''
 
 tags_metadata = [
     {
@@ -136,7 +139,6 @@ async def post_slots_user_view(user_id: str,schedules:methods.Slots, db: Session
 @app.get('/users/{user_id}/slots/',tags=["Time Slots"])
 async def get_slots_user_view(user_id: str,db:Session=Depends(get_db)):
     methods.user_exists(user_id,db)
-    methods.slots_exists(user_id,db) 
     return methods.get_slots(user_id,db)
 
 #get all the time slots for all users
@@ -180,7 +182,7 @@ async def update_slots_view(user_id: str,slots: methods.Slots, db: Session = Dep
 '''Should retrieve a list of schedules with:
 -Id of the candidate
 -first name and last name of the candidate
--slots matched
+-time slots matched
 -name of the interviewers
 '''
 #get the schedules of a given user for all interviewers
@@ -189,7 +191,7 @@ async def update_slots_view(user_id: str,slots: methods.Slots, db: Session = Dep
 async def get_candidate_schedules_view(user_id: str,db:Session=Depends(get_db)):
     return methods.get_candidate_schedules(user_id,db)
 '''
-#If we want too query also the interviewers list
+#Get the list of matched times-lots for an interview of the candidate and selected interviewers
 
 @app.get('/users/{user_id}/schedules/',tags=["Scheduler"])
 async def get_candidate_schedules_view(user_id: str,interviewers: Union[List[str],None]=Query(default=None),db:Session=Depends(get_db)):

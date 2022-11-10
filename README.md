@@ -1,14 +1,8 @@
-# Interview Scheduler 
+# Interview Scheduler v.0.0.1
 https://github.com/alanajac/interview_scheduler
  Alan Jorge Alves do Carmo, 09/11/2022.
+ alan.ajac@gmail.com
 
-[comment]: <> (A estrutura: dá um parágrafo ou dois de introdução, depois explica cada um dos endpoints com:
-1- endpoint
-2- parâmetros obrigatórios e opcionais
-3- retornos esperados
-4- tipos de erros que podem ser lançados)
-
-[comment]: <> (Depois tu cria uma seção chamada arquitetura e explica tuas decisões (por que o FastApi, por que o SqlAlchemy, por que o MySql, como os arquivos estão separados)
 ##1. Overview
 
 This is the documentation for a Interview Scheduler API developed by Alan Jorge Alves do Carmo, 09/11/2022.
@@ -31,22 +25,15 @@ Anyone may then query the API to get a collection of periods of time when it’s
 
 ##2. Stack and Installation
 
-Python 3.8>
-Sqlite3 
+Python>=3.8.10
+To install the requirements of the project in the prompt or command line, type, on the folder/directory of the project:
+pip3 install -r requirements.txt
 
-Libraries: 
-**Installating of libraries:***
-pip3 <name of the library>
-Libraries list:
--Fastapi (framework)
--sqlalchemy
--pydantic
--typing
--datetime
--os
--uuid
--enum
+In the folder/directory of the project, type:
+uvicorn main:app --reload
 
+Open the localhost on the browser:
+http://localhost:8000/
 
 ##3. EndPoints
 All the endpoints can be checked and tested at: http://localhost:8000/docs
@@ -169,7 +156,7 @@ The choice of the architecture had as objective organize and separate the method
 In this section I provide a step-by-step tutorial of how to use the API to obtain a collection of time-slots for an interview of a candidate by one or more interviewers, by inputing their time-slots availability according to the description in the Section 1.
 There is also the option of using an already filled database with some data. To check the commands without the need of adding the data to it.
 
-The file support_file.dat contains data to be used in the step-by-step procedure below.
+The file support_datafile.dat contains data to be used in the step-by-step procedure below.
 In the folder /sqlite/ there is already a filled database which are already loaded and can be used straight to get the results. If you prefer to do that test instead, go straight to **section 5.4**
 
 

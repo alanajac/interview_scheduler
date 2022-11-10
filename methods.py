@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session,aliased
 from sqlalchemy import and_
 import models
-from typing import Union,List,Optional
-from uuid import UUID, uuid4
+from typing import List,Optional
+from uuid import  uuid4
 from enum import Enum
-from pydantic import BaseModel,Field
+from pydantic import BaseModel
 from datetime import datetime
 from fastapi import HTTPException
 class Roles(str,Enum):
@@ -153,7 +153,7 @@ def get_slots_by_role(role_name: str,db:Session):
 
 '''
   
-
+sql query
 select c.user_id as "candidate id", u.first_name "candidate name", u.last_name " candidate surname",i.user_id as "interviewer id",u2.first_name as "interviewer name", c.slots as "time slots"
 from Schedules c 
 inner join Users u on c.user_id = u.id and u.id = "1582721e-625c-4f70-97cc-9eb17a2810ff"
@@ -183,10 +183,6 @@ def get_candidate_schedules(user_input: str,db:Session):
     .join(DBSlots_out,and_(DBSlots_in.slots == DBSlots_out.slots,DBSlots_out.role == "interviewer"))\
     .join(DBUser_out,DBUser_out.id==DBSlots_out.user_id).order_by(DBSlots_in.slots).all()
 
-#List comprehensions -work-query
-    result = [(db.query(DBSlots_in.user_id.label("candidate id"),DBUser_in.first_name.label("candidate name"),DBUser_in.last_name.label("candidate surname"),DBSlots_out.user_id.label("interviewer id"),DBUser_out.first_name.label("interviewer name"),DBSlots_in.slots.label("time slots")).select_from(DBSlots_in) \
-    .join(DBUser_in,and_(DBSlots_in.user_id == DBUser_in.id,DBUser_in.id==user_input))\
-    .join(DBSlots_out,and_(DBSlots_in.slots == DBSlots_out.slots,DBSlots_out.user_id == interviewer)).join(DBUser_out,DBUser_out.id==DBSlots_out.user_id).order_by(DBSlots_in.slots)).all() for interviewer in interviewers]
 '''    
 #Query to get the schedules between candidate and a list of interviewers
      
@@ -203,29 +199,4 @@ def get_candidate_schedules(user_input: str,interviewers:List[str],db:Session):
 
     return result
     
-'''    #3rd attempt
-    result = db.query(DBSlots_in.user_id.label("candidate id"),DBUser_in.first_name.label("candidate name"),DBUser_in.last_name.label("candidate surname"),DBSlots_out.user_id.label("interviewer id"),DBUser_out.first_name.label("interviewer name"),DBSlots_in.slots.label("time slots")).select_from(DBSlots_in) \
-    .join(DBUser_in,and_(DBSlots_in.user_id == DBUser_in.id,DBUser_in.id==user_input))\
-    .join(DBSlots_out,and_(DBSlots_in.slots == DBSlots_out.slots,DBSlots_out.user_id == 'a14076ca-5ee0-4995-b253-5d91240094ca')).join(DBUser_out,DBUser_out.id==DBSlots_out.user_id).order_by(DBSlots_in.slots).all()
 
-    return result
-'''
-#comment
-''' 
-    return result
-    result = [(db.query(DBSlots_in.user_id.label("candidate id"),DBUser_in.first_name.label("candidate name"),DBUser_in.last_name.label("candidate surname"),DBSlots_out.user_id.label("interviewer id"),DBUser_out.first_name.label("interviewer name"),DBSlots_in.slots.label("time slots")).select_from(DBSlots_in) \
-    .join(DBUser_in,and_(DBSlots_in.user_id == DBUser_in.id,DBUser_in.id==user_input))\
-    .join(DBSlots_out,and_(DBSlots_in.slots == DBSlots_out.slots,DBSlots_out.user_id == interviewer)).join(DBUser_out,DBUser_out.id==DBSlots_out.user_id).order_by(DBSlots_in.slots)).all() for interviewer in interviewers]
-   
-
-     #Using list comprehensions:
-    #my_list = [param for param in iterable]
-    Sane as: for char in 'hello':
-                my_list.append(char)
-    my_list = [char for char in 'hello']            
-    hello-> our input list
-    first char: ?-variable ->our expression?
-    second_char: ?
-    first char is an expression
-    my_list = [expression for parameter in iterable]
-'''
