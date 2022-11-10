@@ -7,17 +7,17 @@
 }
 
 {
+  "first_name": "Roberto",
+  "last_name": "Planta",
+  "middle_name": "",
+  "email": "led@zeppelin.com",
+  "role": "interviewer"
+}
+{
   "first_name": "John",
   "last_name": "Lennon",
   "middle_name": "",
   "email": "iloveyoko@beatles.com",
-  "role": "interviewer"
-}
-{
-  "first_name": "Richard",
-  "last_name": "Feynman",
-  "middle_name": "",
-  "email": "feynman@physics.com",
   "role": "interviewer"
 }
 {
